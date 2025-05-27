@@ -19,7 +19,7 @@ on:
 
 jobs:
   AutoReleaseInfo:
-    runs-on: [blacksmith-16vcpu-ubuntu-2404, blacksmith-16vcpu-ubuntu-2404]]
+    runs-on: [blacksmith-16vcpu-ubuntu-2404, blacksmith-16vcpu-ubuntu-2404]
     outputs:
       data: ${{ steps.info.outputs.AUTO_RELEASE_PARAMS }}
       dry_run: ${{ steps.info.outputs.DRY_RUN }}
@@ -80,7 +80,7 @@ jobs:
 
   CleanUp:
     needs: [Releases]
-    runs-on: [blacksmith-16vcpu-ubuntu-2404, blacksmith-16vcpu-ubuntu-2404]]
+    runs-on: [blacksmith-16vcpu-ubuntu-2404, blacksmith-16vcpu-ubuntu-2404]
     steps:
       - uses: ./.github/actions/clean
         with:
@@ -88,7 +88,7 @@ jobs:
 
 #  PostSlackMessage:
 #    needs: [Releases]
-#    runs-on: [self-hosted, blacksmith-16vcpu-ubuntu-2404]]
+#    runs-on: [self-hosted, blacksmith-16vcpu-ubuntu-2404]
 #    if: ${{ !cancelled() }}
 #    steps:
 #      - name: Check out repository code

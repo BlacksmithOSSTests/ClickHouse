@@ -360,7 +360,7 @@ jobs:
           fi
 
   build_arm_darwin:
-    runs-on: [blacksmith-16vcpu-ubuntu-2204, builder-aarch64]
+    runs-on: [blacksmith-16vcpu-ubuntu-2404, builder-aarch64]
     needs: [config_workflow, dockers_build_amd_and_merge]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFybV9kYXJ3aW4p') }}
     name: "Build (arm_darwin)"

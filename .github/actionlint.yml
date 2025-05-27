@@ -1,6 +1,7 @@
 self-hosted-runner:
   labels:
     - builder
+    - builder-aarch64
     - func-tester
     - func-tester-aarch64
     - fuzzer-unit-tester

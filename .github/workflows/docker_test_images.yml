@@ -18,7 +18,7 @@ env:
 
 jobs:
   DockerBuildAarch64:
-    runs-on: [blacksmith-16vcpu-ubuntu-2404, style-checker-aarch64]
+    runs-on: [blacksmith-16vcpu-ubuntu-2404, blacksmith-16vcpu-ubuntu-2404-arm]
     if: |
       !failure() && !cancelled() && toJson(fromJson(inputs.data).docker_data.missing_aarch64) != '[]'
     steps:
@@ -33,7 +33,7 @@ jobs:
             --image-tags '${{ toJson(fromJson(inputs.data).docker_data.images) }}' \
             --missing-images '${{ toJson(fromJson(inputs.data).docker_data.missing_aarch64) }}'
   DockerBuildAmd64:
-    runs-on: [blacksmith-16vcpu-ubuntu-2404, style-checker]
+    runs-on: [blacksmith-16vcpu-ubuntu-2404, blacksmith-16vcpu-ubuntu-2404]
     if: |
       !failure() && !cancelled() && toJson(fromJson(inputs.data).docker_data.missing_amd64) != '[]'
     steps:
@@ -49,7 +49,7 @@ jobs:
             --missing-images '${{ toJson(fromJson(inputs.data).docker_data.missing_amd64) }}'
   DockerMultiArchManifest:
     needs: [DockerBuildAmd64, DockerBuildAarch64]
-    runs-on: [blacksmith-16vcpu-ubuntu-2404, style-checker]
+    runs-on: [blacksmith-16vcpu-ubuntu-2404, blacksmith-16vcpu-ubuntu-2404]
     if: |
       !failure() && !cancelled() && (toJson(fromJson(inputs.data).docker_data.missing_multi) != '[]' || inputs.set_latest)
     steps:

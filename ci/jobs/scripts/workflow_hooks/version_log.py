@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from praktika.info import Info
@@ -6,6 +7,10 @@ from praktika.utils import Shell
 from ci.jobs.scripts.cidb_cluster import CIDBCluster
 from ci.jobs.scripts.clickhouse_version import CHVersion
 
+# Skip if running on blacksmith runners (no AWS/DB)
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[version_log.py] Skipping: AWS_EC2_METADATA_DISABLED is set.")
+    exit(0)
 
 def _add_build_to_version_history():
     info = Info()

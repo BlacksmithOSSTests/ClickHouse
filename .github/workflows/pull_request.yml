@@ -22,6 +22,8 @@ jobs:
     runs-on: blacksmith-2vcpu-ubuntu-2204-arm
     needs: []
     name: "Config Workflow"
+    env:
+      AWS_EC2_METADATA_DISABLED: "true"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
     steps:

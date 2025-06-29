@@ -15,12 +15,12 @@ S3_REPORT_BUCKET_HTTP_ENDPOINT = "s3.amazonaws.com/clickhouse-test-reports"
 class RunnerLabels:
     CI_SERVICES = "ci_services"
     CI_SERVICES_EBS = "ci_services_ebs"
-    BUILDER_AMD = ["self-hosted", "builder"]
-    BUILDER_ARM = ["self-hosted", "builder-aarch64"]
-    FUNC_TESTER_AMD = ["self-hosted", "func-tester"]
-    FUNC_TESTER_ARM = ["self-hosted", "func-tester-aarch64"]
-    STYLE_CHECK_AMD = ["self-hosted", "style-checker"]
-    STYLE_CHECK_ARM = ["self-hosted", "style-checker-aarch64"]
+    BUILDER_AMD = ["blacksmith-32vcpu-ubuntu-2204"]
+    BUILDER_ARM = ["blacksmith-32vcpu-ubuntu-2204-arm"]
+    FUNC_TESTER_AMD = ["blacksmith-16vcpu-ubuntu-2204"]
+    FUNC_TESTER_ARM = ["blacksmith-16vcpu-ubuntu-2204-arm"]
+    STYLE_CHECK_AMD = ["blacksmith-2vcpu-ubuntu-2204"]
+    STYLE_CHECK_ARM = ["blacksmith-2vcpu-ubuntu-2204-arm"]
 
 
 class CIFiles:
@@ -38,7 +38,7 @@ azure_secret = Secret.Config(
 SECRETS = [
     Secret.Config(
         name="dockerhub_robot_password",
-        type=Secret.Type.AWS_SSM_VAR,
+        type=Secret.Type.GH_SECRET,
     ),
     Secret.Config(
         name="clickhouse-test-stat-url",
@@ -53,14 +53,6 @@ SECRETS = [
         type=Secret.Type.AWS_SSM_VAR,
     ),
     azure_secret,
-    Secret.Config(
-        name="woolenwolf_gh_app.clickhouse-app-id",
-        type=Secret.Type.AWS_SSM_SECRET,
-    ),
-    Secret.Config(
-        name="woolenwolf_gh_app.clickhouse-app-key",
-        type=Secret.Type.AWS_SSM_SECRET,
-    ),
 ]
 
 DOCKERS = [

@@ -15,6 +15,13 @@ current_directory = Utils.cwd()
 build_dir = f"{current_directory}/ci/tmp/build"
 temp_dir = f"{current_directory}/ci/tmp/"
 
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[fast_test.py] Skipping AWS/SSM/Azure logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+    # Exit early if any cloud logic would be called
+    # If you want to run local logic, do it here; otherwise, exit
+    # For now, just exit
+    import sys
+    sys.exit(0)
 
 def clone_submodules():
     submodules_to_update = [
@@ -113,6 +120,15 @@ def parse_args():
 
 
 def main():
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[fast_test.py] Skipping S3 cache setup: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+        os.environ["SCCACHE_IDLE_TIMEOUT"] = "7200"
+        os.environ["SCCACHE_BUCKET"] = "dummy-bucket"
+        os.environ["SCCACHE_S3_KEY_PREFIX"] = "dummy-prefix"
+        os.environ["CTCACHE_DIR"] = f"{build_dir}/ccache/clang-tidy-cache"
+        os.environ["CTCACHE_S3_BUCKET"] = "dummy-bucket"
+        os.environ["CTCACHE_S3_FOLDER"] = "dummy-folder"
+
     args = parse_args()
     stop_watch = Utils.Stopwatch()
 

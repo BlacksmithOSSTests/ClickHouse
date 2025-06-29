@@ -1,11 +1,14 @@
 import time
 import traceback
+import os
 
 import requests
 
 from ci.praktika.info import Info
 from ci.praktika.secret import Secret
 
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[log_cluster.py] Skipping log cluster operations: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
 
 class LogCluster:
     URL_SECRET = "clickhouse_ci_logs_host"
@@ -24,6 +27,10 @@ class LogCluster:
             self._session = None
 
     def is_ready(self):
+        if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+            print("LogCluster: Skipping log cluster connection - AWS_EC2_METADATA_DISABLED is set")
+            return False
+            
         if not self.url:
             url = Secret.Config(
                 name=self.URL_SECRET,

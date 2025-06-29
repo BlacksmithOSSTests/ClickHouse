@@ -54,8 +54,8 @@ class JobConfigs:
         name=JobNames.FAST_TEST,
         runs_on=RunnerLabels.BUILDER_AMD,
         command="python3 ./ci/jobs/fast_test.py",
-        # --network=host required for ec2 metadata http endpoint to work
-        run_in_docker="clickhouse/fasttest+--network=host+--volume=./ci/tmp/var/lib/clickhouse:/var/lib/clickhouse+--volume=./ci/tmp/etc/clickhouse-client:/etc/clickhouse-client+--volume=./ci/tmp/etc/clickhouse-server:/etc/clickhouse-server+--volume=./ci/tmp/var/log:/var/log",
+        # --network=host was required for ec2 metadata http endpoint, not needed for blacksmith runners
+        run_in_docker="clickhouse/fasttest+--volume=./ci/tmp/var/lib/clickhouse:/var/lib/clickhouse+--volume=./ci/tmp/etc/clickhouse-client:/etc/clickhouse-client+--volume=./ci/tmp/etc/clickhouse-server:/etc/clickhouse-server+--volume=./ci/tmp/var/log:/var/log",
         digest_config=Job.CacheDigestConfig(
             include_paths=[
                 "./ci/jobs/fast_test.py",
@@ -79,7 +79,7 @@ class JobConfigs:
         runs_on=[],  # from parametrize()
         requires=[],
         command='python3 ./ci/jobs/build_clickhouse.py --build-type "{PARAMETER}"',
-        run_in_docker="clickhouse/binary-builder+--network=host",
+        run_in_docker="clickhouse/binary-builder",
         timeout=3600 * 4,
         digest_config=Job.CacheDigestConfig(
             include_paths=[
@@ -109,8 +109,8 @@ class JobConfigs:
         runs_on=[],  # from parametrize()
         requires=["Build (amd_tidy)"],
         command='python3 ./ci/jobs/build_clickhouse.py --build-type "{PARAMETER}"',
-        # --network=host required for ec2 metadata http endpoint to work
-        run_in_docker="clickhouse/binary-builder+--network=host",
+        # --network=host was required for ec2 metadata http endpoint, not needed for blacksmith runners
+        run_in_docker="clickhouse/binary-builder",
         timeout=3600 * 4,
         allow_merge_on_failure=True,
         digest_config=build_digest_config,
@@ -127,8 +127,8 @@ class JobConfigs:
         runs_on=[],  # from parametrize()
         requires=[],
         command='python3 ./ci/jobs/build_clickhouse.py --build-type "{PARAMETER}"',
-        # --network=host required for ec2 metadata http endpoint to work
-        run_in_docker="clickhouse/binary-builder+--network=host",
+        # --network=host was required for ec2 metadata http endpoint, not needed for blacksmith runners
+        run_in_docker="clickhouse/binary-builder",
         timeout=3600 * 2,
         digest_config=build_digest_config,
         post_hooks=[
@@ -215,8 +215,8 @@ class JobConfigs:
         runs_on=[],  # from parametrize()
         requires=[],
         command='python3 ./ci/jobs/build_clickhouse.py --build-type "{PARAMETER}"',
-        # --network=host required for ec2 metadata http endpoint to work
-        run_in_docker="clickhouse/binary-builder+--network=host",
+        # --network=host was required for ec2 metadata http endpoint, not needed for blacksmith runners
+        run_in_docker="clickhouse/binary-builder",
         timeout=3600 * 2,
         digest_config=build_digest_config,
         post_hooks=[

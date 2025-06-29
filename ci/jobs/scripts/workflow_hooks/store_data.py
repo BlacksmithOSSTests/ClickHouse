@@ -1,3 +1,4 @@
+import os
 import copy
 
 from ci.defs.job_configs import JobConfigs
@@ -6,6 +7,9 @@ from ci.praktika.info import Info
 from ci.praktika.utils import Shell
 
 if __name__ == "__main__":
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[store_data.py] Skipping: AWS_EC2_METADATA_DISABLED is set.")
+        exit(0)
     info = Info()
 
     # store changed files

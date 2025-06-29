@@ -1,5 +1,6 @@
 import sys
 import traceback
+import os
 from pathlib import Path
 
 from ci.jobs.scripts.log_cluster import LogClusterBuildProfileQueries
@@ -10,8 +11,13 @@ from ci.praktika.utils import Shell, Utils
 temp_dir = "./ci/tmp"
 build_dir = "./ci/tmp/build"
 
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[build_profile_hook.py] Skipping log cluster upload logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
 
 def check():
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[build_profile_hook.py] Skipping log cluster upload logic in check(): AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+        return True
     print("Prepare build profile data")
     profiles_dir = Path("./ci/tmp") / "profiles_source"
     profiles_dir.mkdir(parents=True, exist_ok=True)

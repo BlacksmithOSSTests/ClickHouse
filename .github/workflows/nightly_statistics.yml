@@ -16,7 +16,7 @@ env:
 jobs:
 
   config_workflow:
-    runs-on: [self-hosted, style-checker-aarch64]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
     needs: []
     name: "Config Workflow"
     outputs:
@@ -33,7 +33,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -50,8 +53,14 @@ jobs:
             python3 -m praktika run 'Config Workflow' --workflow "NightlyStatistics" --ci |& tee ./ci/tmp/job.log
           fi
 
+      - name: Upload artifact workflow_config_nightlystatistics.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow_config_nightlystatistics.json
+          path: ./ci/tmp/workflow_config_nightlystatistics.json
+
   collect_statistics:
-    runs-on: [self-hosted, style-checker-aarch64]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
     needs: [config_workflow]
     name: "Collect Statistics"
     outputs:
@@ -68,11 +77,20 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_nightlystatistics.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_nightlystatistics.json
+          path: ./ci/tmp
 
       - name: Run
         id: run

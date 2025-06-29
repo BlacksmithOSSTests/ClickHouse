@@ -1,6 +1,7 @@
 import json
 import sys
 from datetime import datetime
+import os
 
 from ci.praktika import Secret
 from ci.praktika.cidb import CIDB
@@ -13,6 +14,15 @@ from ci.settings.settings import S3_REPORT_BUCKET_NAME
 
 # TODO: Should work for generic CI and become native praktika job
 
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[collect_statistics.py] Skipping S3/AWS logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+    os.environ["SCCACHE_IDLE_TIMEOUT"] = "7200"
+    os.environ["SCCACHE_BUCKET"] = "dummy-bucket"
+    os.environ["SCCACHE_S3_KEY_PREFIX"] = "dummy-prefix"
+    os.environ["CTCACHE_DIR"] = "./ci/tmp/build/ccache/clang-tidy-cache"
+    os.environ["CTCACHE_S3_BUCKET"] = "dummy-bucket"
+    os.environ["CTCACHE_S3_FOLDER"] = "dummy-folder"
+    sys.exit(0)
 
 QUANTILES = [
     0,

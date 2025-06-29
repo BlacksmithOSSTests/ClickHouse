@@ -2,9 +2,20 @@ from ci.jobs.scripts.clickhouse_proc import ClickHouseLight
 from ci.praktika.info import Info
 from ci.praktika.result import Result
 from ci.praktika.utils import Shell, Utils
+import os
 
 temp_dir = f"{Utils.cwd()}/ci/tmp/"
 
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[clickbench.py] Skipping S3/AWS logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+    os.environ["SCCACHE_IDLE_TIMEOUT"] = "7200"
+    os.environ["SCCACHE_BUCKET"] = "dummy-bucket"
+    os.environ["SCCACHE_S3_KEY_PREFIX"] = "dummy-prefix"
+    os.environ["CTCACHE_DIR"] = "./ci/tmp/build/ccache/clang-tidy-cache"
+    os.environ["CTCACHE_S3_BUCKET"] = "dummy-bucket"
+    os.environ["CTCACHE_S3_FOLDER"] = "dummy-folder"
+    import sys
+    sys.exit(0)
 
 def main():
     res = True

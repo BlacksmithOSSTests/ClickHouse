@@ -158,18 +158,15 @@ def _update_workflow_with_native_jobs(workflow):
         for job in workflow.jobs[len(docker_job_names) :]:
             job.requires.extend(docker_job_names)
 
-    if (
-        workflow.enable_cache
-        or workflow.enable_report
-        or workflow.enable_merge_ready_status
-    ):
-        from .native_jobs import _workflow_config_job
+    # Always add config workflow job for basic workflow functionality
+    # (even without caching/reporting features)
+    from .native_jobs import _workflow_config_job
 
-        print(f"Enable native job [{_workflow_config_job.name}] for [{workflow.name}]")
-        aux_job = copy.deepcopy(_workflow_config_job)
-        workflow.jobs.insert(0, aux_job)
-        for job in workflow.jobs[1:]:
-            job.requires.append(aux_job.name)
+    print(f"Enable native job [{_workflow_config_job.name}] for [{workflow.name}]")
+    aux_job = copy.deepcopy(_workflow_config_job)
+    workflow.jobs.insert(0, aux_job)
+    for job in workflow.jobs[1:]:
+        job.requires.append(aux_job.name)
 
     if (
         workflow.enable_merge_ready_status

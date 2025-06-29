@@ -16,7 +16,7 @@ env:
 jobs:
 
   config_workflow:
-    runs-on: [self-hosted, style-checker-aarch64]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
     needs: []
     name: "Config Workflow"
     outputs:
@@ -33,6 +33,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_nightlyjepsen.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -52,8 +56,14 @@ jobs:
             python3 -m praktika run 'Config Workflow' --workflow "NightlyJepsen" --ci |& tee ./ci/tmp/job.log
           fi
 
+      - name: Upload artifact workflow_config_nightlyjepsen.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow_config_nightlyjepsen.json
+          path: ./ci/tmp/workflow_config_nightlyjepsen.json
+
   dockers_build_amd:
-    runs-on: [self-hosted, style-checker]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204]
     needs: [config_workflow]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'RG9ja2VycyBCdWlsZCAoYW1kKQ==') }}
     name: "Dockers Build (amd)"
@@ -71,6 +81,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_nightlyjepsen.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -78,6 +92,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_nightlyjepsen.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_nightlyjepsen.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -91,7 +111,7 @@ jobs:
           fi
 
   dockers_build_arm:
-    runs-on: [self-hosted, style-checker-aarch64]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
     needs: [config_workflow]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'RG9ja2VycyBCdWlsZCAoYXJtKQ==') }}
     name: "Dockers Build (arm)"
@@ -109,6 +129,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_nightlyjepsen.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -116,6 +140,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_nightlyjepsen.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_nightlyjepsen.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -129,7 +159,7 @@ jobs:
           fi
 
   build_amd_binary:
-    runs-on: [self-hosted, builder]
+    runs-on: [blacksmith-32vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFtZF9iaW5hcnkp') }}
     name: "Build (amd_binary)"
@@ -147,6 +177,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_nightlyjepsen.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -154,6 +188,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_nightlyjepsen.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_nightlyjepsen.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -167,7 +207,7 @@ jobs:
           fi
 
   clickhouse_keeper_jepsen:
-    runs-on: [self-hosted, style-checker-aarch64]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_binary]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'Q2xpY2tIb3VzZSBLZWVwZXIgSmVwc2Vu') }}
     name: "ClickHouse Keeper Jepsen"
@@ -185,6 +225,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_nightlyjepsen.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -192,6 +236,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_nightlyjepsen.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_nightlyjepsen.json
+          path: ./ci/tmp
 
       - name: Run
         id: run

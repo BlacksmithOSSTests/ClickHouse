@@ -1,5 +1,5 @@
-import argparse
 import os
+import argparse
 import re
 import time
 from pathlib import Path
@@ -35,8 +35,13 @@ def parse_args():
 
 
 def get_changed_tests(info: Info):
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[functional_tests.py] Skipping get_changed_tests: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+        return []
     result = set()
     changed_files = info.get_changed_files()
+    if not changed_files:
+        return []
     assert changed_files, "No changed files"
 
     for fpath in changed_files:
@@ -169,14 +174,13 @@ def main():
         if "SharedCatalog" in to:
             is_shared_catalog = True
 
-    if not info.is_local_run:
-        # TODO: find a way to work with Azure secret so it's ok for local tests as well, for now keep azure disabled
+    if not info.is_local_run and os.environ.get("AWS_EC2_METADATA_DISABLED") != "true":
         os.environ["AZURE_CONNECTION_STRING"] = Shell.get_output(
             f"aws ssm get-parameter --region us-east-1 --name azure_connection_string --with-decryption --output text --query Parameter.Value",
             verbose=True,
         )
     else:
-        print("Disable azure for a local run")
+        print("Disable azure for a local run or Blacksmith runner")
         config_installs_args += " --no-azure"
 
     ch_path = args.ch_path
@@ -192,6 +196,10 @@ def main():
                 args.test
             ), "For running flaky or bugfix_validation check locally, test case name must be provided via --test"
             tests = [args.test]
+        elif os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+            print("[functional_tests.py] Skipping bugfix/flaky validation: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+            Result.create_from(status=Result.Status.SKIPPED, info="No tests to run (AWS/SSM logic skipped on Blacksmith)").complete_job()
+            return
         else:
             tests = get_changed_tests(info)
         if tests:
@@ -201,6 +209,7 @@ def main():
             Result.create_from(
                 status=Result.Status.SKIPPED, info="No tests to run"
             ).complete_job()
+            return
 
     stage = args.param or JobStages.INSTALL_CLICKHOUSE
     if stage:

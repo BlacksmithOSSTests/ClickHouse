@@ -10,6 +10,7 @@ env:
   # Force the stdout and stderr streams to be unbuffered
   PYTHONUNBUFFERED: 1
   CHECKOUT_REF: ""
+  dockerhub_robot_password: ${{ secrets.dockerhub_robot_password }}
 
 # Allow updating GH commit statuses and PR comments to post an actual job reports link
 permissions: write-all
@@ -17,7 +18,7 @@ permissions: write-all
 jobs:
 
   config_workflow:
-    runs-on: [self-hosted, style-checker-aarch64]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
     needs: []
     name: "Config Workflow"
     outputs:
@@ -34,6 +35,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -53,8 +58,14 @@ jobs:
             python3 -m praktika run 'Config Workflow' --workflow "ReleaseBranchCI" --ci |& tee ./ci/tmp/job.log
           fi
 
+      - name: Upload artifact workflow_config_releasebranchci.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp/workflow_config_releasebranchci.json
+
   dockers_build_amd:
-    runs-on: [self-hosted, style-checker]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204]
     needs: [config_workflow]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'RG9ja2VycyBCdWlsZCAoYW1kKQ==') }}
     name: "Dockers Build (amd)"
@@ -72,6 +83,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -79,6 +94,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -92,7 +113,7 @@ jobs:
           fi
 
   dockers_build_arm:
-    runs-on: [self-hosted, style-checker-aarch64]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
     needs: [config_workflow]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'RG9ja2VycyBCdWlsZCAoYXJtKQ==') }}
     name: "Dockers Build (arm)"
@@ -110,6 +131,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -117,6 +142,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -130,7 +161,7 @@ jobs:
           fi
 
   build_amd_debug:
-    runs-on: [self-hosted, builder]
+    runs-on: [blacksmith-32vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFtZF9kZWJ1Zyk=') }}
     name: "Build (amd_debug)"
@@ -148,6 +179,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -155,6 +190,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -168,7 +209,7 @@ jobs:
           fi
 
   build_amd_release:
-    runs-on: [self-hosted, builder]
+    runs-on: [blacksmith-32vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFtZF9yZWxlYXNlKQ==') }}
     name: "Build (amd_release)"
@@ -186,6 +227,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -193,6 +238,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -206,7 +257,7 @@ jobs:
           fi
 
   build_amd_asan:
-    runs-on: [self-hosted, builder]
+    runs-on: [blacksmith-32vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFtZF9hc2FuKQ==') }}
     name: "Build (amd_asan)"
@@ -224,6 +275,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -231,6 +286,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -244,7 +305,7 @@ jobs:
           fi
 
   build_amd_tsan:
-    runs-on: [self-hosted, builder]
+    runs-on: [blacksmith-32vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFtZF90c2FuKQ==') }}
     name: "Build (amd_tsan)"
@@ -262,6 +323,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -269,6 +334,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -282,7 +353,7 @@ jobs:
           fi
 
   build_amd_msan:
-    runs-on: [self-hosted, builder]
+    runs-on: [blacksmith-32vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFtZF9tc2FuKQ==') }}
     name: "Build (amd_msan)"
@@ -300,6 +371,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -307,6 +382,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -320,7 +401,7 @@ jobs:
           fi
 
   build_amd_ubsan:
-    runs-on: [self-hosted, builder]
+    runs-on: [blacksmith-32vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFtZF91YnNhbik=') }}
     name: "Build (amd_ubsan)"
@@ -338,6 +419,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -345,6 +430,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -358,7 +449,7 @@ jobs:
           fi
 
   build_arm_release:
-    runs-on: [self-hosted, builder-aarch64]
+    runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFybV9yZWxlYXNlKQ==') }}
     name: "Build (arm_release)"
@@ -376,6 +467,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -383,6 +478,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -396,7 +497,7 @@ jobs:
           fi
 
   build_arm_asan:
-    runs-on: [self-hosted, builder-aarch64]
+    runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFybV9hc2FuKQ==') }}
     name: "Build (arm_asan)"
@@ -414,6 +515,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -421,6 +526,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -434,7 +545,7 @@ jobs:
           fi
 
   build_amd_darwin:
-    runs-on: [self-hosted, builder]
+    runs-on: [blacksmith-32vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFtZF9kYXJ3aW4p') }}
     name: "Build (amd_darwin)"
@@ -452,6 +563,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -459,6 +574,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -472,7 +593,7 @@ jobs:
           fi
 
   build_arm_darwin:
-    runs-on: [self-hosted, builder-aarch64]
+    runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'QnVpbGQgKGFybV9kYXJ3aW4p') }}
     name: "Build (arm_darwin)"
@@ -490,6 +611,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -497,6 +622,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -510,7 +641,7 @@ jobs:
           fi
 
   docker_server_image:
-    runs-on: [self-hosted, style-checker]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release, build_arm_release]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'RG9ja2VyIHNlcnZlciBpbWFnZQ==') }}
     name: "Docker server image"
@@ -528,6 +659,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -535,6 +670,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -548,7 +689,7 @@ jobs:
           fi
 
   docker_keeper_image:
-    runs-on: [self-hosted, style-checker]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release, build_arm_release]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'RG9ja2VyIGtlZXBlciBpbWFnZQ==') }}
     name: "Docker keeper image"
@@ -566,6 +707,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -573,6 +718,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -586,7 +737,7 @@ jobs:
           fi
 
   install_packages_release:
-    runs-on: [self-hosted, style-checker]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW5zdGFsbCBwYWNrYWdlcyAocmVsZWFzZSk=') }}
     name: "Install packages (release)"
@@ -604,6 +755,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -611,6 +766,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -624,7 +785,7 @@ jobs:
           fi
 
   install_packages_aarch64:
-    runs-on: [self-hosted, style-checker-aarch64]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_release]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW5zdGFsbCBwYWNrYWdlcyAoYWFyY2g2NCk=') }}
     name: "Install packages (aarch64)"
@@ -642,6 +803,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -649,6 +814,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -662,7 +833,7 @@ jobs:
           fi
 
   integration_tests_asan_1_4:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKGFzYW4sIDEvNCk=') }}
     name: "Integration tests (asan, 1/4)"
@@ -680,6 +851,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -687,6 +862,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -700,7 +881,7 @@ jobs:
           fi
 
   integration_tests_asan_2_4:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKGFzYW4sIDIvNCk=') }}
     name: "Integration tests (asan, 2/4)"
@@ -718,6 +899,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -725,6 +910,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -738,7 +929,7 @@ jobs:
           fi
 
   integration_tests_asan_3_4:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKGFzYW4sIDMvNCk=') }}
     name: "Integration tests (asan, 3/4)"
@@ -756,6 +947,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -763,6 +958,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -776,7 +977,7 @@ jobs:
           fi
 
   integration_tests_asan_4_4:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKGFzYW4sIDQvNCk=') }}
     name: "Integration tests (asan, 4/4)"
@@ -794,6 +995,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -801,6 +1006,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -814,7 +1025,7 @@ jobs:
           fi
 
   integration_tests_asan_old_analyzer_1_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKGFzYW4sIG9sZCBhbmFseXplciwgMS82KQ==') }}
     name: "Integration tests (asan, old analyzer, 1/6)"
@@ -832,6 +1043,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -839,6 +1054,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -852,7 +1073,7 @@ jobs:
           fi
 
   integration_tests_asan_old_analyzer_2_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKGFzYW4sIG9sZCBhbmFseXplciwgMi82KQ==') }}
     name: "Integration tests (asan, old analyzer, 2/6)"
@@ -870,6 +1091,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -877,6 +1102,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -890,7 +1121,7 @@ jobs:
           fi
 
   integration_tests_asan_old_analyzer_3_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKGFzYW4sIG9sZCBhbmFseXplciwgMy82KQ==') }}
     name: "Integration tests (asan, old analyzer, 3/6)"
@@ -908,6 +1139,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -915,6 +1150,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -928,7 +1169,7 @@ jobs:
           fi
 
   integration_tests_asan_old_analyzer_4_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKGFzYW4sIG9sZCBhbmFseXplciwgNC82KQ==') }}
     name: "Integration tests (asan, old analyzer, 4/6)"
@@ -946,6 +1187,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -953,6 +1198,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -966,7 +1217,7 @@ jobs:
           fi
 
   integration_tests_asan_old_analyzer_5_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKGFzYW4sIG9sZCBhbmFseXplciwgNS82KQ==') }}
     name: "Integration tests (asan, old analyzer, 5/6)"
@@ -984,6 +1235,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -991,6 +1246,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1004,7 +1265,7 @@ jobs:
           fi
 
   integration_tests_asan_old_analyzer_6_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKGFzYW4sIG9sZCBhbmFseXplciwgNi82KQ==') }}
     name: "Integration tests (asan, old analyzer, 6/6)"
@@ -1022,6 +1283,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1029,6 +1294,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1042,7 +1313,7 @@ jobs:
           fi
 
   integration_tests_release_1_4:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKHJlbGVhc2UsIDEvNCk=') }}
     name: "Integration tests (release, 1/4)"
@@ -1060,6 +1331,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1067,6 +1342,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1080,7 +1361,7 @@ jobs:
           fi
 
   integration_tests_release_2_4:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKHJlbGVhc2UsIDIvNCk=') }}
     name: "Integration tests (release, 2/4)"
@@ -1098,6 +1379,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1105,6 +1390,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1118,7 +1409,7 @@ jobs:
           fi
 
   integration_tests_release_3_4:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKHJlbGVhc2UsIDMvNCk=') }}
     name: "Integration tests (release, 3/4)"
@@ -1136,6 +1427,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1143,6 +1438,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1156,7 +1457,7 @@ jobs:
           fi
 
   integration_tests_release_4_4:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKHJlbGVhc2UsIDQvNCk=') }}
     name: "Integration tests (release, 4/4)"
@@ -1174,6 +1475,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1181,6 +1486,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1194,7 +1505,7 @@ jobs:
           fi
 
   integration_tests_tsan_1_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKHRzYW4sIDEvNik=') }}
     name: "Integration tests (tsan, 1/6)"
@@ -1212,6 +1523,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1219,6 +1534,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1232,7 +1553,7 @@ jobs:
           fi
 
   integration_tests_tsan_2_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKHRzYW4sIDIvNik=') }}
     name: "Integration tests (tsan, 2/6)"
@@ -1250,6 +1571,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1257,6 +1582,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1270,7 +1601,7 @@ jobs:
           fi
 
   integration_tests_tsan_3_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKHRzYW4sIDMvNik=') }}
     name: "Integration tests (tsan, 3/6)"
@@ -1288,6 +1619,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1295,6 +1630,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1308,7 +1649,7 @@ jobs:
           fi
 
   integration_tests_tsan_4_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKHRzYW4sIDQvNik=') }}
     name: "Integration tests (tsan, 4/6)"
@@ -1326,6 +1667,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1333,6 +1678,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1346,7 +1697,7 @@ jobs:
           fi
 
   integration_tests_tsan_5_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKHRzYW4sIDUvNik=') }}
     name: "Integration tests (tsan, 5/6)"
@@ -1364,6 +1715,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1371,6 +1726,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1384,7 +1745,7 @@ jobs:
           fi
 
   integration_tests_tsan_6_6:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'SW50ZWdyYXRpb24gdGVzdHMgKHRzYW4sIDYvNik=') }}
     name: "Integration tests (tsan, 6/6)"
@@ -1402,6 +1763,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1409,6 +1774,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1422,7 +1793,7 @@ jobs:
           fi
 
   stress_test_amd_debug:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'U3RyZXNzIHRlc3QgKGFtZF9kZWJ1Zyk=') }}
     name: "Stress test (amd_debug)"
@@ -1440,6 +1811,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1447,6 +1822,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1460,7 +1841,7 @@ jobs:
           fi
 
   stress_test_amd_tsan:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'U3RyZXNzIHRlc3QgKGFtZF90c2FuKQ==') }}
     name: "Stress test (amd_tsan)"
@@ -1478,6 +1859,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1485,6 +1870,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1498,7 +1889,7 @@ jobs:
           fi
 
   stress_test_arm_asan:
-    runs-on: [self-hosted, func-tester-aarch64]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_asan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'U3RyZXNzIHRlc3QgKGFybV9hc2FuKQ==') }}
     name: "Stress test (arm_asan)"
@@ -1516,6 +1907,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1523,6 +1918,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1536,7 +1937,7 @@ jobs:
           fi
 
   stress_test_amd_ubsan:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_ubsan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'U3RyZXNzIHRlc3QgKGFtZF91YnNhbik=') }}
     name: "Stress test (amd_ubsan)"
@@ -1554,6 +1955,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1561,6 +1966,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1574,7 +1985,7 @@ jobs:
           fi
 
   stress_test_amd_msan:
-    runs-on: [self-hosted, func-tester]
+    runs-on: [blacksmith-16vcpu-ubuntu-2204]
     needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_msan]
     if: ${{ !failure() && !cancelled() && !contains(fromJson(needs.config_workflow.outputs.data).cache_success_base64, 'U3RyZXNzIHRlc3QgKGFtZF9tc2FuKQ==') }}
     name: "Stress test (amd_msan)"
@@ -1592,6 +2003,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_config_releasebranchci.json << 'EOF'
           ${{ needs.config_workflow.outputs.data }}
           EOF
@@ -1599,6 +2014,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_releasebranchci.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_releasebranchci.json
+          path: ./ci/tmp
 
       - name: Run
         id: run

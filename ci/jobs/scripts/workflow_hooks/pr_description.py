@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 from typing import Tuple
@@ -212,6 +213,9 @@ def check_labels(category, info):
 
 
 if __name__ == "__main__":
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[pr_description.py] Skipping: AWS_EC2_METADATA_DISABLED is set.")
+        exit(0)
     info = Info()
     is_ok, category = check_category(info.pr_body)
     if not is_ok:

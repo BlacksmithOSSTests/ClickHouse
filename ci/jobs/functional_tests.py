@@ -35,6 +35,9 @@ def parse_args():
 
 
 def get_changed_tests(info: Info):
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[functional_tests.py] Skipping get_changed_tests: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+        return []
     result = set()
     changed_files = info.get_changed_files()
     assert changed_files, "No changed files"
@@ -198,6 +201,10 @@ def main():
                 args.test
             ), "For running flaky or bugfix_validation check locally, test case name must be provided via --test"
             tests = [args.test]
+        elif os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+            print("[functional_tests.py] Skipping bugfix/flaky validation: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+            Result.create_from(status=Result.Status.SKIPPED, info="No tests to run (AWS/SSM logic skipped on Blacksmith)").complete_job()
+            return
         else:
             tests = get_changed_tests(info)
         if tests:
@@ -207,6 +214,7 @@ def main():
             Result.create_from(
                 status=Result.Status.SKIPPED, info="No tests to run"
             ).complete_job()
+            return
 
     stage = args.param or JobStages.INSTALL_CLICKHOUSE
     if stage:

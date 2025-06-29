@@ -16,7 +16,7 @@ env:
 jobs:
 
   config_workflow:
-    runs-on: [self-hosted, style-checker-aarch64]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
     needs: []
     name: "Config Workflow"
     outputs:
@@ -51,7 +51,7 @@ jobs:
           fi
 
   collect_statistics:
-    runs-on: [self-hosted, style-checker-aarch64]
+    runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
     needs: [config_workflow]
     name: "Collect Statistics"
     outputs:

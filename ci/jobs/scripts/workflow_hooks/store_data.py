@@ -6,12 +6,10 @@ from ci.praktika.digest import Digest
 from ci.praktika.info import Info
 from ci.praktika.utils import Shell
 
-# Skip if running on blacksmith runners (no AWS/DB)
-if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
-    print("[store_data.py] Skipping: AWS_EC2_METADATA_DISABLED is set.")
-    exit(0)
-
 if __name__ == "__main__":
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[store_data.py] Skipping: AWS_EC2_METADATA_DISABLED is set.")
+        exit(0)
     info = Info()
 
     # store changed files

@@ -6,11 +6,6 @@ from ci.praktika.info import Info
 
 integrations_ecosystem_files = ["src/Core/TypeId.h"]
 
-# Skip if running on blacksmith runners (no AWS/DB)
-if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
-    print("[team_notifications.py] Skipping: AWS_EC2_METADATA_DISABLED is set.")
-    exit(0)
-
 def check():
     info = Info()
 
@@ -28,5 +23,8 @@ def check():
 
 
 if __name__ == "__main__":
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[team_notifications.py] Skipping: AWS_EC2_METADATA_DISABLED is set.")
+        exit(0)
     if not check():
         sys.exit(1)

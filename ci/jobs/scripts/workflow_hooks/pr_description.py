@@ -1,9 +1,15 @@
+import os
 import re
 import sys
 from typing import Tuple
 
 from praktika.info import Info
 from praktika.utils import Shell
+
+# Skip if running on blacksmith runners (no AWS/DB)
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[pr_description.py] Skipping: AWS_EC2_METADATA_DISABLED is set.")
+    exit(0)
 
 LABEL_CATEGORIES = {
     "pr-backward-incompatible": ["Backward Incompatible Change"],

@@ -55,7 +55,8 @@ permissions: write-all\
   DISABLE_CI_MERGE_COMMIT: ${{{{ vars.DISABLE_CI_MERGE_COMMIT || '0' }}}}
   DISABLE_CI_CACHE: ${{{{ vars.DISABLE_CI_CACHE || '0' }}}}
   CHECKOUT_REF: ${{{{ vars.DISABLE_CI_MERGE_COMMIT == '1' && github.event.pull_request.head.sha || '' }}}}
-  AWS_EC2_METADATA_DISABLED: "true"\
+  AWS_EC2_METADATA_DISABLED: "true"
+  GH_TOKEN: ${{{{ github.token }}}}\
 """
         TEMPLATE_ENV_CHECKOUT_REF_DEFAULT = """\
   CHECKOUT_REF: ""\

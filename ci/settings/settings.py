@@ -3,6 +3,8 @@ S3_REPORT_BUCKET_NAME = "clickhouse-test-reports"
 S3_BUCKET_HTTP_ENDPOINT = "clickhouse-builds.s3.amazonaws.com"
 S3_REPORT_BUCKET_HTTP_ENDPOINT = "s3.amazonaws.com/clickhouse-test-reports"
 
+# Disable AWS EC2 metadata service calls on blacksmith runners
+AWS_EC2_METADATA_DISABLED = "true"
 
 class RunnerLabels:
     # Style check runners (light jobs)

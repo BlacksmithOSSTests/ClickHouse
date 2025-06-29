@@ -38,7 +38,7 @@ azure_secret = Secret.Config(
 SECRETS = [
     Secret.Config(
         name="dockerhub_robot_password",
-        type=Secret.Type.AWS_SSM_VAR,
+        type=Secret.Type.GH_SECRET,
     ),
     Secret.Config(
         name="clickhouse-test-stat-url",

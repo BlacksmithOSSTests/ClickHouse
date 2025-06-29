@@ -35,7 +35,8 @@ ENABLE_ARTIFACTS_REPORT = False
 COMPRESS_THRESHOLD_MB = 32
 TEXT_CONTENT_EXTENSIONS = [".txt", ".log", ".err", ".out", ".tsv", ".csv", ".json"]
 
-DOCKERHUB_USERNAME = "robotclickhouse"
+# Docker Hub configuration - can be overridden via environment variable
+DOCKERHUB_USERNAME = "blacksmithcihello"  # Changed from robotclickhouse to your Docker Hub username
 DOCKERHUB_SECRET = "dockerhub_robot_password"
 
 CI_DB_DB_NAME = "default"

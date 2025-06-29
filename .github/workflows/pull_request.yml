@@ -13,15 +13,54 @@ env:
   DISABLE_CI_CACHE: ${{ vars.DISABLE_CI_CACHE || '0' }}
   CHECKOUT_REF: ${{ vars.DISABLE_CI_MERGE_COMMIT == '1' && github.event.pull_request.head.sha || '' }}
   AWS_EC2_METADATA_DISABLED: "true"
+  dockerhub_robot_password: ${{ secrets.dockerhub_robot_password }}
 
 # Allow updating GH commit statuses and PR comments to post an actual job reports link
 permissions: write-all
 
 jobs:
 
+  config_workflow:
+    runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
+    needs: []
+    name: "Config Workflow"
+    outputs:
+      data: ${{ steps.run.outputs.DATA }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CHECKOUT_REF }}
+
+      - name: Prepare env script
+        run: |
+          rm -rf ./ci/tmp ./ci/tmp ./ci/tmp
+          mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
+          cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
+          export PYTHONPATH=./ci:.:
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
+          cat > ./ci/tmp/workflow_status.json << 'EOF'
+          ${{ toJson(needs) }}
+          EOF
+          ENV_SETUP_SCRIPT_EOF
+
+      - name: Run
+        id: run
+        run: |
+          . ./ci/tmp/praktika_setup_env.sh
+          set -o pipefail
+          if command -v ts &> /dev/null; then
+            python3 -m praktika run 'Config Workflow' --workflow "PR" --ci |& ts '[%Y-%m-%d %H:%M:%S]' | tee ./ci/tmp/job.log
+          else
+            python3 -m praktika run 'Config Workflow' --workflow "PR" --ci |& tee ./ci/tmp/job.log
+          fi
+
   dockers_build_amd:
     runs-on: [blacksmith-2vcpu-ubuntu-2204]
-    needs: []
+    needs: [config_workflow]
     name: "Dockers Build (amd)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -37,7 +76,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -56,7 +98,7 @@ jobs:
 
   dockers_build_arm:
     runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
-    needs: []
+    needs: [config_workflow]
     name: "Dockers Build (arm)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -72,7 +114,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -91,7 +136,7 @@ jobs:
 
   style_check:
     runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     name: "Style check"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -107,7 +152,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -126,7 +174,7 @@ jobs:
 
   docs_check:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, build_arm_binary]
     name: "Docs check"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -142,7 +190,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -161,7 +212,7 @@ jobs:
 
   fast_test:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     name: "Fast test"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -177,7 +228,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -196,7 +250,7 @@ jobs:
 
   build_amd_tidy:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     name: "Build (amd_tidy)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -212,7 +266,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -231,7 +288,7 @@ jobs:
 
   build_arm_tidy:
     runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tidy]
     name: "Build (arm_tidy)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -247,7 +304,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -266,7 +326,7 @@ jobs:
 
   build_amd_debug:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
     name: "Build (amd_debug)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -282,7 +342,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -301,7 +364,7 @@ jobs:
 
   build_amd_release:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
     name: "Build (amd_release)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -317,7 +380,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -336,7 +402,7 @@ jobs:
 
   build_amd_asan:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
     name: "Build (amd_asan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -352,7 +418,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -371,7 +440,7 @@ jobs:
 
   build_amd_tsan:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
     name: "Build (amd_tsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -387,7 +456,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -406,7 +478,7 @@ jobs:
 
   build_amd_msan:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
     name: "Build (amd_msan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -422,7 +494,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -441,7 +516,7 @@ jobs:
 
   build_amd_ubsan:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
     name: "Build (amd_ubsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -457,7 +532,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -476,7 +554,7 @@ jobs:
 
   build_amd_binary:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
     name: "Build (amd_binary)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -492,7 +570,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -511,7 +592,7 @@ jobs:
 
   build_arm_release:
     runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
     name: "Build (arm_release)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -527,7 +608,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -546,7 +630,7 @@ jobs:
 
   build_arm_asan:
     runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
     name: "Build (arm_asan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -562,7 +646,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -581,7 +668,7 @@ jobs:
 
   build_arm_coverage:
     runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
     name: "Build (arm_coverage)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -597,7 +684,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -616,7 +706,7 @@ jobs:
 
   build_arm_binary:
     runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy]
     name: "Build (arm_binary)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -632,7 +722,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -651,7 +744,7 @@ jobs:
 
   build_amd_darwin:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
     name: "Build (amd_darwin)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -667,7 +760,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -686,7 +782,7 @@ jobs:
 
   build_arm_darwin:
     runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
     name: "Build (arm_darwin)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -702,7 +798,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -721,7 +820,7 @@ jobs:
 
   build_arm_v80compat:
     runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
     name: "Build (arm_v80compat)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -737,7 +836,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -756,7 +858,7 @@ jobs:
 
   build_amd_freebsd:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
     name: "Build (amd_freebsd)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -772,7 +874,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -791,7 +896,7 @@ jobs:
 
   build_ppc64le:
     runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
     name: "Build (ppc64le)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -807,7 +912,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -826,7 +934,7 @@ jobs:
 
   build_amd_compat:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
     name: "Build (amd_compat)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -842,7 +950,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -861,7 +972,7 @@ jobs:
 
   build_amd_musl:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
     name: "Build (amd_musl)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -877,7 +988,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -896,7 +1010,7 @@ jobs:
 
   build_riscv64:
     runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
     name: "Build (riscv64)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -912,7 +1026,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -931,7 +1048,7 @@ jobs:
 
   build_s390x:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
     name: "Build (s390x)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -947,7 +1064,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -966,7 +1086,7 @@ jobs:
 
   build_loongarch64:
     runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
     name: "Build (loongarch64)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -982,7 +1102,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1001,7 +1124,7 @@ jobs:
 
   build_fuzzers:
     runs-on: [blacksmith-32vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary]
     name: "Build (fuzzers)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1017,7 +1140,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1036,7 +1162,7 @@ jobs:
 
   unit_tests_asan:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     name: "Unit tests (asan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1052,7 +1178,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1071,7 +1200,7 @@ jobs:
 
   unit_tests_tsan:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Unit tests (tsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1087,7 +1216,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1106,7 +1238,7 @@ jobs:
 
   unit_tests_msan:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_msan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_msan]
     name: "Unit tests (msan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1122,7 +1254,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1141,7 +1276,7 @@ jobs:
 
   unit_tests_ubsan:
     runs-on: [blacksmith-32vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_ubsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_ubsan]
     name: "Unit tests (ubsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1157,7 +1292,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1176,7 +1314,7 @@ jobs:
 
   docker_server_image:
     runs-on: [blacksmith-2vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_release, build_arm_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release, build_arm_release]
     name: "Docker server image"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1192,7 +1330,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1211,7 +1352,7 @@ jobs:
 
   docker_keeper_image:
     runs-on: [blacksmith-2vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_release, build_arm_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release, build_arm_release]
     name: "Docker keeper image"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1227,7 +1368,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1246,7 +1390,7 @@ jobs:
 
   install_packages_release:
     runs-on: [blacksmith-2vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     name: "Install packages (release)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1262,7 +1406,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1281,7 +1428,7 @@ jobs:
 
   install_packages_aarch64:
     runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_release]
     name: "Install packages (aarch64)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1297,7 +1444,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1316,7 +1466,7 @@ jobs:
 
   compatibility_check_release:
     runs-on: [blacksmith-2vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     name: "Compatibility check (release)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1332,7 +1482,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1351,7 +1504,7 @@ jobs:
 
   compatibility_check_aarch64:
     runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_release]
     name: "Compatibility check (aarch64)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1367,7 +1520,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1386,7 +1542,7 @@ jobs:
 
   stateless_tests_amd_asan_distributed_plan_1_2:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     name: "Stateless tests (amd_asan, distributed plan, 1/2)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1402,7 +1558,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1421,7 +1580,7 @@ jobs:
 
   stateless_tests_amd_asan_distributed_plan_2_2:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     name: "Stateless tests (amd_asan, distributed plan, 2/2)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1437,7 +1596,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1456,7 +1618,7 @@ jobs:
 
   stateless_tests_amd_binary:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_binary]
     name: "Stateless tests (amd_binary)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1472,7 +1634,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1491,7 +1656,7 @@ jobs:
 
   stateless_tests_amd_binary_old_analyzer_s3_storage_databasereplicated_1_2:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_binary]
     name: "Stateless tests (amd_binary, old analyzer, s3 storage, DatabaseReplicated, 1/2)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1507,7 +1672,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1526,7 +1694,7 @@ jobs:
 
   stateless_tests_amd_binary_old_analyzer_s3_storage_databasereplicated_2_2:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_binary]
     name: "Stateless tests (amd_binary, old analyzer, s3 storage, DatabaseReplicated, 2/2)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1542,7 +1710,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1561,7 +1732,7 @@ jobs:
 
   stateless_tests_amd_binary_parallelreplicas_s3_storage:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_binary]
     name: "Stateless tests (amd_binary, ParallelReplicas, s3 storage)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1577,7 +1748,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1596,7 +1770,7 @@ jobs:
 
   stateless_tests_amd_debug_asyncinsert_s3_storage:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug]
     name: "Stateless tests (amd_debug, AsyncInsert, s3 storage)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1612,7 +1786,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1631,7 +1808,7 @@ jobs:
 
   stateless_tests_amd_debug:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug]
     name: "Stateless tests (amd_debug)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1647,7 +1824,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1666,7 +1846,7 @@ jobs:
 
   stateless_tests_amd_tsan_1_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Stateless tests (amd_tsan, 1/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1682,7 +1862,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1701,7 +1884,7 @@ jobs:
 
   stateless_tests_amd_tsan_2_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Stateless tests (amd_tsan, 2/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1717,7 +1900,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1736,7 +1922,7 @@ jobs:
 
   stateless_tests_amd_tsan_3_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Stateless tests (amd_tsan, 3/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1752,7 +1938,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1771,7 +1960,7 @@ jobs:
 
   stateless_tests_amd_msan_1_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_msan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_msan]
     name: "Stateless tests (amd_msan, 1/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1787,7 +1976,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1806,7 +1998,7 @@ jobs:
 
   stateless_tests_amd_msan_2_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_msan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_msan]
     name: "Stateless tests (amd_msan, 2/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1822,7 +2014,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1841,7 +2036,7 @@ jobs:
 
   stateless_tests_amd_msan_3_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_msan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_msan]
     name: "Stateless tests (amd_msan, 3/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1857,7 +2052,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1876,7 +2074,7 @@ jobs:
 
   stateless_tests_amd_msan_4_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_msan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_msan]
     name: "Stateless tests (amd_msan, 4/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1892,7 +2090,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1911,7 +2112,7 @@ jobs:
 
   stateless_tests_amd_ubsan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_ubsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_ubsan]
     name: "Stateless tests (amd_ubsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1927,7 +2128,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1946,7 +2150,7 @@ jobs:
 
   stateless_tests_amd_debug_distributed_plan_s3_storage:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug]
     name: "Stateless tests (amd_debug, distributed plan, s3 storage)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1962,7 +2166,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -1981,7 +2188,7 @@ jobs:
 
   stateless_tests_amd_tsan_s3_storage_1_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Stateless tests (amd_tsan, s3 storage, 1/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -1997,7 +2204,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2016,7 +2226,7 @@ jobs:
 
   stateless_tests_amd_tsan_s3_storage_2_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Stateless tests (amd_tsan, s3 storage, 2/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2032,7 +2242,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2051,7 +2264,7 @@ jobs:
 
   stateless_tests_amd_tsan_s3_storage_3_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Stateless tests (amd_tsan, s3 storage, 3/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2067,7 +2280,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2086,7 +2302,7 @@ jobs:
 
   stateless_tests_arm_binary:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_binary]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_binary]
     name: "Stateless tests (arm_binary)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2102,7 +2318,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2121,7 +2340,7 @@ jobs:
 
   stateless_tests_amd_coverage_1_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
     name: "Stateless tests (amd_coverage,1/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2137,7 +2356,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2156,7 +2378,7 @@ jobs:
 
   stateless_tests_amd_coverage_2_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
     name: "Stateless tests (amd_coverage,2/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2172,7 +2394,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2191,7 +2416,7 @@ jobs:
 
   stateless_tests_amd_coverage_3_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
     name: "Stateless tests (amd_coverage,3/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2207,7 +2432,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2226,7 +2454,7 @@ jobs:
 
   stateless_tests_amd_coverage_4_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
     name: "Stateless tests (amd_coverage,4/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2242,7 +2470,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2261,7 +2492,7 @@ jobs:
 
   stateless_tests_amd_coverage_5_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
     name: "Stateless tests (amd_coverage,5/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2277,7 +2508,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2296,7 +2530,7 @@ jobs:
 
   stateless_tests_amd_coverage_6_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, build_arm_coverage]
     name: "Stateless tests (amd_coverage,6/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2312,7 +2546,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2331,7 +2568,7 @@ jobs:
 
   bugfix_validation_integration_tests:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy, build_amd_debug]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, fast_test, build_amd_tidy, build_amd_debug]
     name: "Bugfix validation (integration tests)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2347,7 +2584,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2366,7 +2606,7 @@ jobs:
 
   bugfix_validation_functional_tests:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm]
     name: "Bugfix validation (functional tests)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2382,7 +2622,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2401,7 +2644,7 @@ jobs:
 
   stateless_tests_amd_asan_flaky_check:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     name: "Stateless tests (amd_asan, flaky check)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2417,7 +2660,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2436,7 +2682,7 @@ jobs:
 
   integration_tests_asan_old_analyzer_1_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     name: "Integration tests (asan, old analyzer, 1/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2452,7 +2698,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2471,7 +2720,7 @@ jobs:
 
   integration_tests_asan_old_analyzer_2_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     name: "Integration tests (asan, old analyzer, 2/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2487,7 +2736,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2506,7 +2758,7 @@ jobs:
 
   integration_tests_asan_old_analyzer_3_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     name: "Integration tests (asan, old analyzer, 3/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2522,7 +2774,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2541,7 +2796,7 @@ jobs:
 
   integration_tests_asan_old_analyzer_4_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     name: "Integration tests (asan, old analyzer, 4/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2557,7 +2812,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2576,7 +2834,7 @@ jobs:
 
   integration_tests_asan_old_analyzer_5_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     name: "Integration tests (asan, old analyzer, 5/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2592,7 +2850,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2611,7 +2872,7 @@ jobs:
 
   integration_tests_asan_old_analyzer_6_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     name: "Integration tests (asan, old analyzer, 6/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2627,7 +2888,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2646,7 +2910,7 @@ jobs:
 
   integration_tests_release_1_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     name: "Integration tests (release, 1/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2662,7 +2926,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2681,7 +2948,7 @@ jobs:
 
   integration_tests_release_2_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     name: "Integration tests (release, 2/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2697,7 +2964,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2716,7 +2986,7 @@ jobs:
 
   integration_tests_release_3_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     name: "Integration tests (release, 3/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2732,7 +3002,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2751,7 +3024,7 @@ jobs:
 
   integration_tests_release_4_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     name: "Integration tests (release, 4/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2767,7 +3040,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2786,7 +3062,7 @@ jobs:
 
   integration_tests_aarch64_distributed_plan_1_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_release]
     name: "Integration tests (aarch64, distributed plan, 1/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2802,7 +3078,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2821,7 +3100,7 @@ jobs:
 
   integration_tests_aarch64_distributed_plan_2_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_release]
     name: "Integration tests (aarch64, distributed plan, 2/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2837,7 +3116,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2856,7 +3138,7 @@ jobs:
 
   integration_tests_aarch64_distributed_plan_3_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_release]
     name: "Integration tests (aarch64, distributed plan, 3/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2872,7 +3154,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2891,7 +3176,7 @@ jobs:
 
   integration_tests_aarch64_distributed_plan_4_4:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_release]
     name: "Integration tests (aarch64, distributed plan, 4/4)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2907,7 +3192,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2926,7 +3214,7 @@ jobs:
 
   integration_tests_tsan_1_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Integration tests (tsan, 1/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2942,7 +3230,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2961,7 +3252,7 @@ jobs:
 
   integration_tests_tsan_2_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Integration tests (tsan, 2/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -2977,7 +3268,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -2996,7 +3290,7 @@ jobs:
 
   integration_tests_tsan_3_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Integration tests (tsan, 3/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3012,7 +3306,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3031,7 +3328,7 @@ jobs:
 
   integration_tests_tsan_4_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Integration tests (tsan, 4/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3047,7 +3344,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3066,7 +3366,7 @@ jobs:
 
   integration_tests_tsan_5_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Integration tests (tsan, 5/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3082,7 +3382,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3101,7 +3404,7 @@ jobs:
 
   integration_tests_tsan_6_6:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Integration tests (tsan, 6/6)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3117,7 +3420,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3136,7 +3442,7 @@ jobs:
 
   integration_tests_asan_flaky_check:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_asan]
     name: "Integration tests (asan, flaky check)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3152,7 +3458,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3171,7 +3480,7 @@ jobs:
 
   stress_test_amd_debug:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug]
     name: "Stress test (amd_debug)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3187,7 +3496,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3206,7 +3518,7 @@ jobs:
 
   stress_test_amd_tsan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Stress test (amd_tsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3222,7 +3534,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3241,7 +3556,7 @@ jobs:
 
   stress_test_arm_asan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_asan]
     name: "Stress test (arm_asan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3257,7 +3572,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3276,7 +3594,7 @@ jobs:
 
   stress_test_amd_ubsan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_ubsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_ubsan]
     name: "Stress test (amd_ubsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3292,7 +3610,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3311,7 +3632,7 @@ jobs:
 
   stress_test_amd_msan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_msan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_msan]
     name: "Stress test (amd_msan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3327,7 +3648,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3346,7 +3670,7 @@ jobs:
 
   upgrade_check_arm_asan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_asan]
     name: "Upgrade check (arm_asan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3362,7 +3686,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3381,7 +3708,7 @@ jobs:
 
   upgrade_check_amd_tsan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "Upgrade check (amd_tsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3397,7 +3724,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3416,7 +3746,7 @@ jobs:
 
   upgrade_check_amd_msan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_msan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_msan]
     name: "Upgrade check (amd_msan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3432,7 +3762,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3451,7 +3784,7 @@ jobs:
 
   upgrade_check_amd_debug:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug]
     name: "Upgrade check (amd_debug)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3467,7 +3800,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3486,7 +3822,7 @@ jobs:
 
   ast_fuzzer_amd_debug:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug]
     name: "AST fuzzer (amd_debug)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3502,7 +3838,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3521,7 +3860,7 @@ jobs:
 
   ast_fuzzer_arm_asan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_asan]
     name: "AST fuzzer (arm_asan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3537,7 +3876,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3556,7 +3898,7 @@ jobs:
 
   ast_fuzzer_amd_tsan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "AST fuzzer (amd_tsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3572,7 +3914,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3591,7 +3936,7 @@ jobs:
 
   ast_fuzzer_amd_msan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_msan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_msan]
     name: "AST fuzzer (amd_msan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3607,7 +3952,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3626,7 +3974,7 @@ jobs:
 
   ast_fuzzer_amd_ubsan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_ubsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_ubsan]
     name: "AST fuzzer (amd_ubsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3642,7 +3990,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3661,7 +4012,7 @@ jobs:
 
   buzzhouse_amd_debug:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_debug]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_debug]
     name: "BuzzHouse (amd_debug)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3677,7 +4028,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3696,7 +4050,7 @@ jobs:
 
   buzzhouse_arm_asan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_asan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_asan]
     name: "BuzzHouse (arm_asan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3712,7 +4066,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3731,7 +4088,7 @@ jobs:
 
   buzzhouse_amd_tsan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_tsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_tsan]
     name: "BuzzHouse (amd_tsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3747,7 +4104,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3766,7 +4126,7 @@ jobs:
 
   buzzhouse_amd_msan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_msan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_msan]
     name: "BuzzHouse (amd_msan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3782,7 +4142,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3801,7 +4164,7 @@ jobs:
 
   buzzhouse_amd_ubsan:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_ubsan]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_ubsan]
     name: "BuzzHouse (amd_ubsan)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3817,7 +4180,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3836,7 +4202,7 @@ jobs:
 
   performance_comparison_amd_release_master_head_1_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     name: "Performance Comparison (amd_release, master_head, 1/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3852,7 +4218,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3871,7 +4240,7 @@ jobs:
 
   performance_comparison_amd_release_master_head_2_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     name: "Performance Comparison (amd_release, master_head, 2/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3887,7 +4256,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3906,7 +4278,7 @@ jobs:
 
   performance_comparison_amd_release_master_head_3_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204]
-    needs: [dockers_build_amd, dockers_build_arm, build_amd_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_amd_release]
     name: "Performance Comparison (amd_release, master_head, 3/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3922,7 +4294,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3941,7 +4316,7 @@ jobs:
 
   performance_comparison_arm_release_master_head_1_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_release]
     name: "Performance Comparison (arm_release, master_head, 1/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3957,7 +4332,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -3976,7 +4354,7 @@ jobs:
 
   performance_comparison_arm_release_master_head_2_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_release]
     name: "Performance Comparison (arm_release, master_head, 2/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -3992,7 +4370,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -4011,7 +4392,7 @@ jobs:
 
   performance_comparison_arm_release_master_head_3_3:
     runs-on: [blacksmith-16vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, build_arm_release]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, build_arm_release]
     name: "Performance Comparison (arm_release, master_head, 3/3)"
     outputs:
       data: ${{ steps.run.outputs.DATA }}
@@ -4027,7 +4408,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF
@@ -4046,7 +4430,7 @@ jobs:
 
   finish_workflow:
     runs-on: [blacksmith-2vcpu-ubuntu-2204-arm]
-    needs: [dockers_build_amd, dockers_build_arm, style_check, docs_check, fast_test, build_amd_tidy, build_arm_tidy, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary, build_amd_darwin, build_arm_darwin, build_arm_v80compat, build_amd_freebsd, build_ppc64le, build_amd_compat, build_amd_musl, build_riscv64, build_s390x, build_loongarch64, build_fuzzers, unit_tests_asan, unit_tests_tsan, unit_tests_msan, unit_tests_ubsan, docker_server_image, docker_keeper_image, install_packages_release, install_packages_aarch64, compatibility_check_release, compatibility_check_aarch64, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, stateless_tests_amd_binary, stateless_tests_amd_binary_old_analyzer_s3_storage_databasereplicated_1_2, stateless_tests_amd_binary_old_analyzer_s3_storage_databasereplicated_2_2, stateless_tests_amd_binary_parallelreplicas_s3_storage, stateless_tests_amd_debug_asyncinsert_s3_storage, stateless_tests_amd_debug, stateless_tests_amd_tsan_1_3, stateless_tests_amd_tsan_2_3, stateless_tests_amd_tsan_3_3, stateless_tests_amd_msan_1_4, stateless_tests_amd_msan_2_4, stateless_tests_amd_msan_3_4, stateless_tests_amd_msan_4_4, stateless_tests_amd_ubsan, stateless_tests_amd_debug_distributed_plan_s3_storage, stateless_tests_amd_tsan_s3_storage_1_3, stateless_tests_amd_tsan_s3_storage_2_3, stateless_tests_amd_tsan_s3_storage_3_3, stateless_tests_arm_binary, stateless_tests_amd_coverage_1_6, stateless_tests_amd_coverage_2_6, stateless_tests_amd_coverage_3_6, stateless_tests_amd_coverage_4_6, stateless_tests_amd_coverage_5_6, stateless_tests_amd_coverage_6_6, bugfix_validation_integration_tests, bugfix_validation_functional_tests, stateless_tests_amd_asan_flaky_check, integration_tests_asan_old_analyzer_1_6, integration_tests_asan_old_analyzer_2_6, integration_tests_asan_old_analyzer_3_6, integration_tests_asan_old_analyzer_4_6, integration_tests_asan_old_analyzer_5_6, integration_tests_asan_old_analyzer_6_6, integration_tests_release_1_4, integration_tests_release_2_4, integration_tests_release_3_4, integration_tests_release_4_4, integration_tests_aarch64_distributed_plan_1_4, integration_tests_aarch64_distributed_plan_2_4, integration_tests_aarch64_distributed_plan_3_4, integration_tests_aarch64_distributed_plan_4_4, integration_tests_tsan_1_6, integration_tests_tsan_2_6, integration_tests_tsan_3_6, integration_tests_tsan_4_6, integration_tests_tsan_5_6, integration_tests_tsan_6_6, integration_tests_asan_flaky_check, stress_test_amd_debug, stress_test_amd_tsan, stress_test_arm_asan, stress_test_amd_ubsan, stress_test_amd_msan, upgrade_check_arm_asan, upgrade_check_amd_tsan, upgrade_check_amd_msan, upgrade_check_amd_debug, ast_fuzzer_amd_debug, ast_fuzzer_arm_asan, ast_fuzzer_amd_tsan, ast_fuzzer_amd_msan, ast_fuzzer_amd_ubsan, buzzhouse_amd_debug, buzzhouse_arm_asan, buzzhouse_amd_tsan, buzzhouse_amd_msan, buzzhouse_amd_ubsan, performance_comparison_amd_release_master_head_1_3, performance_comparison_amd_release_master_head_2_3, performance_comparison_amd_release_master_head_3_3, performance_comparison_arm_release_master_head_1_3, performance_comparison_arm_release_master_head_2_3, performance_comparison_arm_release_master_head_3_3]
+    needs: [config_workflow, dockers_build_amd, dockers_build_arm, style_check, docs_check, fast_test, build_amd_tidy, build_arm_tidy, build_amd_debug, build_amd_release, build_amd_asan, build_amd_tsan, build_amd_msan, build_amd_ubsan, build_amd_binary, build_arm_release, build_arm_asan, build_arm_coverage, build_arm_binary, build_amd_darwin, build_arm_darwin, build_arm_v80compat, build_amd_freebsd, build_ppc64le, build_amd_compat, build_amd_musl, build_riscv64, build_s390x, build_loongarch64, build_fuzzers, unit_tests_asan, unit_tests_tsan, unit_tests_msan, unit_tests_ubsan, docker_server_image, docker_keeper_image, install_packages_release, install_packages_aarch64, compatibility_check_release, compatibility_check_aarch64, stateless_tests_amd_asan_distributed_plan_1_2, stateless_tests_amd_asan_distributed_plan_2_2, stateless_tests_amd_binary, stateless_tests_amd_binary_old_analyzer_s3_storage_databasereplicated_1_2, stateless_tests_amd_binary_old_analyzer_s3_storage_databasereplicated_2_2, stateless_tests_amd_binary_parallelreplicas_s3_storage, stateless_tests_amd_debug_asyncinsert_s3_storage, stateless_tests_amd_debug, stateless_tests_amd_tsan_1_3, stateless_tests_amd_tsan_2_3, stateless_tests_amd_tsan_3_3, stateless_tests_amd_msan_1_4, stateless_tests_amd_msan_2_4, stateless_tests_amd_msan_3_4, stateless_tests_amd_msan_4_4, stateless_tests_amd_ubsan, stateless_tests_amd_debug_distributed_plan_s3_storage, stateless_tests_amd_tsan_s3_storage_1_3, stateless_tests_amd_tsan_s3_storage_2_3, stateless_tests_amd_tsan_s3_storage_3_3, stateless_tests_arm_binary, stateless_tests_amd_coverage_1_6, stateless_tests_amd_coverage_2_6, stateless_tests_amd_coverage_3_6, stateless_tests_amd_coverage_4_6, stateless_tests_amd_coverage_5_6, stateless_tests_amd_coverage_6_6, bugfix_validation_integration_tests, bugfix_validation_functional_tests, stateless_tests_amd_asan_flaky_check, integration_tests_asan_old_analyzer_1_6, integration_tests_asan_old_analyzer_2_6, integration_tests_asan_old_analyzer_3_6, integration_tests_asan_old_analyzer_4_6, integration_tests_asan_old_analyzer_5_6, integration_tests_asan_old_analyzer_6_6, integration_tests_release_1_4, integration_tests_release_2_4, integration_tests_release_3_4, integration_tests_release_4_4, integration_tests_aarch64_distributed_plan_1_4, integration_tests_aarch64_distributed_plan_2_4, integration_tests_aarch64_distributed_plan_3_4, integration_tests_aarch64_distributed_plan_4_4, integration_tests_tsan_1_6, integration_tests_tsan_2_6, integration_tests_tsan_3_6, integration_tests_tsan_4_6, integration_tests_tsan_5_6, integration_tests_tsan_6_6, integration_tests_asan_flaky_check, stress_test_amd_debug, stress_test_amd_tsan, stress_test_arm_asan, stress_test_amd_ubsan, stress_test_amd_msan, upgrade_check_arm_asan, upgrade_check_amd_tsan, upgrade_check_amd_msan, upgrade_check_amd_debug, ast_fuzzer_amd_debug, ast_fuzzer_arm_asan, ast_fuzzer_amd_tsan, ast_fuzzer_amd_msan, ast_fuzzer_amd_ubsan, buzzhouse_amd_debug, buzzhouse_arm_asan, buzzhouse_amd_tsan, buzzhouse_amd_msan, buzzhouse_amd_ubsan, performance_comparison_amd_release_master_head_1_3, performance_comparison_amd_release_master_head_2_3, performance_comparison_amd_release_master_head_3_3, performance_comparison_arm_release_master_head_1_3, performance_comparison_arm_release_master_head_2_3, performance_comparison_arm_release_master_head_3_3]
     if: ${{ !cancelled() }}
     name: "Finish Workflow"
     outputs:
@@ -4063,7 +4447,10 @@ jobs:
           mkdir -p ./ci/tmp ./ci/tmp ./ci/tmp
           cat > ./ci/tmp/praktika_setup_env.sh << 'ENV_SETUP_SCRIPT_EOF'
           export PYTHONPATH=./ci:.:
-
+          export dockerhub_robot_password=$(cat<<'EOF'
+          ${{ secrets.dockerhub_robot_password }}
+          EOF
+          )
           cat > ./ci/tmp/workflow_status.json << 'EOF'
           ${{ toJson(needs) }}
           EOF

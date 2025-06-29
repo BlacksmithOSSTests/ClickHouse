@@ -59,6 +59,12 @@ jobs:
             python3 -m praktika run 'Config Workflow' --workflow "PR" --ci |& tee ./ci/tmp/job.log
           fi
 
+      - name: Upload artifact workflow_config_pr.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp/workflow_config_pr.json
+
   dockers_build_amd:
     runs-on: [blacksmith-2vcpu-ubuntu-2204]
     needs: [config_workflow]
@@ -85,6 +91,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -124,6 +136,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -161,6 +179,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -200,6 +224,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -237,6 +267,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -276,6 +312,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -313,6 +355,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -352,6 +400,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -389,6 +443,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -428,6 +488,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -465,6 +531,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -504,6 +576,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -541,6 +619,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -580,6 +664,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -617,6 +707,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -656,6 +752,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -693,6 +795,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -732,6 +840,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -769,6 +883,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -808,6 +928,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -845,6 +971,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -884,6 +1016,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -921,6 +1059,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -960,6 +1104,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -997,6 +1147,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1036,6 +1192,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1073,6 +1235,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1112,6 +1280,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1149,6 +1323,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1188,6 +1368,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1225,6 +1411,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1264,6 +1456,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1301,6 +1499,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1340,6 +1544,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1377,6 +1587,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1416,6 +1632,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1453,6 +1675,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1492,6 +1720,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1529,6 +1763,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1568,6 +1808,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1605,6 +1851,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1644,6 +1896,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1681,6 +1939,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1720,6 +1984,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1757,6 +2027,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1796,6 +2072,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1833,6 +2115,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1872,6 +2160,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1909,6 +2203,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -1948,6 +2248,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -1985,6 +2291,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2024,6 +2336,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2061,6 +2379,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2100,6 +2424,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2137,6 +2467,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2176,6 +2512,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2213,6 +2555,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2252,6 +2600,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2289,6 +2643,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2328,6 +2688,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2365,6 +2731,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2404,6 +2776,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2441,6 +2819,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2480,6 +2864,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2517,6 +2907,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2556,6 +2952,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2593,6 +2995,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2632,6 +3040,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2669,6 +3083,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2708,6 +3128,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2745,6 +3171,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2784,6 +3216,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2821,6 +3259,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2860,6 +3304,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2897,6 +3347,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -2936,6 +3392,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -2973,6 +3435,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3012,6 +3480,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3049,6 +3523,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3088,6 +3568,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3125,6 +3611,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3164,6 +3656,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3201,6 +3699,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3240,6 +3744,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3277,6 +3787,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3316,6 +3832,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3353,6 +3875,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3392,6 +3920,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3429,6 +3963,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3468,6 +4008,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3505,6 +4051,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3544,6 +4096,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3581,6 +4139,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3620,6 +4184,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3657,6 +4227,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3696,6 +4272,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3733,6 +4315,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3772,6 +4360,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3809,6 +4403,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3848,6 +4448,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3885,6 +4491,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -3924,6 +4536,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -3961,6 +4579,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -4000,6 +4624,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -4037,6 +4667,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -4076,6 +4712,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -4113,6 +4755,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -4152,6 +4800,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -4189,6 +4843,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -4228,6 +4888,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -4265,6 +4931,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -4304,6 +4976,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -4341,6 +5019,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -4380,6 +5064,12 @@ jobs:
           EOF
           ENV_SETUP_SCRIPT_EOF
 
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
+
       - name: Run
         id: run
         run: |
@@ -4417,6 +5107,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run
@@ -4456,6 +5152,12 @@ jobs:
           ${{ toJson(needs) }}
           EOF
           ENV_SETUP_SCRIPT_EOF
+
+      - name: Download artifact workflow_config_pr.json
+        uses: actions/download-artifact@v4
+        with:
+          name: workflow_config_pr.json
+          path: ./ci/tmp
 
       - name: Run
         id: run

@@ -272,6 +272,9 @@ class PullRequestPushYamlGen:
 
     def generate(self):
         job_items = []
+        config_job_name_normalized = Utils.normalize_string(Settings.CI_CONFIG_JOB_NAME)
+        workflow_config_artifact_name = f"workflow_config_{Utils.normalize_string(self.workflow_config.name)}.json"
+        workflow_config_artifact_path = f"{Settings.TEMP_DIR}/{workflow_config_artifact_name}"
         for i, job in enumerate(self.workflow_config.jobs):
             job_name_normalized = Utils.normalize_string(job.name)
             needs = ", ".join(map(Utils.normalize_string, job.needs))
@@ -294,23 +297,34 @@ class PullRequestPushYamlGen:
                         )
                     )
             uploads_github = []
+            downloads_github = []
+            # Add artifact upload for config_workflow job
+            if job_name_normalized == config_job_name_normalized:
+                uploads_github.append(
+                    YamlGenerator.Templates.TEMPLATE_GH_UPLOAD.format(
+                        NAME=workflow_config_artifact_name, PATH=workflow_config_artifact_path
+                    )
+                )
+            # Add artifact download for jobs that need config_workflow
+            if config_job_name_normalized in [Utils.normalize_string(n) for n in job.needs]:
+                downloads_github.append(
+                    YamlGenerator.Templates.TEMPLATE_GH_DOWNLOAD.format(
+                        NAME=workflow_config_artifact_name, PATH=Settings.TEMP_DIR
+                    )
+                )
+            # Existing artifact logic
             for artifact in job.artifacts_gh_provides:
                 uploads_github.append(
                     YamlGenerator.Templates.TEMPLATE_GH_UPLOAD.format(
                         NAME=artifact.name, PATH=artifact.path
                     )
                 )
-            downloads_github = []
             for artifact in job.artifacts_gh_requires:
                 downloads_github.append(
                     YamlGenerator.Templates.TEMPLATE_GH_DOWNLOAD.format(
                         NAME=artifact.name, PATH=Settings.INPUT_DIR
                     )
                 )
-
-            config_job_name_normalized = Utils.normalize_string(
-                Settings.CI_CONFIG_JOB_NAME
-            )
 
             if_expression = ""
             if (
@@ -520,4 +534,4 @@ if __name__ == "__main__":
             enable_cache=True,
         )
     ]
-    YamlGenerator().generate(workflow_config=WFS)
+    YamlGenerator().generate()

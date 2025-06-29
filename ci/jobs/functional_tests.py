@@ -1,5 +1,5 @@
-import argparse
 import os
+import argparse
 import re
 import time
 from pathlib import Path
@@ -40,6 +40,8 @@ def get_changed_tests(info: Info):
         return []
     result = set()
     changed_files = info.get_changed_files()
+    if not changed_files:
+        return []
     assert changed_files, "No changed files"
 
     for fpath in changed_files:
@@ -131,12 +133,6 @@ OPTIONS_TO_TEST_RUNNER_ARGUMENTS = {
 
 
 def main():
-    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
-        print("[functional_tests.py] Skipping all AWS/SSM/Azure logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
-        from ci.praktika.result import Result
-        Result.create_from(status=Result.Status.SKIPPED, info="No tests to run (AWS/SSM logic skipped on Blacksmith)").complete_job()
-        return
-
     args = parse_args()
     test_options = [to.strip() for to in args.options.split(",")]
     no_parallel = "non-parallel" in test_options
@@ -179,7 +175,6 @@ def main():
             is_shared_catalog = True
 
     if not info.is_local_run and os.environ.get("AWS_EC2_METADATA_DISABLED") != "true":
-        # TODO: find a way to work with Azure secret so it's ok for local tests as well, for now keep azure disabled
         os.environ["AZURE_CONNECTION_STRING"] = Shell.get_output(
             f"aws ssm get-parameter --region us-east-1 --name azure_connection_string --with-decryption --output text --query Parameter.Value",
             verbose=True,

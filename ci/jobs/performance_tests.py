@@ -292,6 +292,14 @@ def find_prev_build(info, build_type):
 
 
 def main():
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[performance_tests.py] Skipping S3/AWS logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+        os.environ["SCCACHE_IDLE_TIMEOUT"] = "7200"
+        os.environ["SCCACHE_BUCKET"] = "dummy-bucket"
+        os.environ["SCCACHE_S3_KEY_PREFIX"] = "dummy-prefix"
+        os.environ["CTCACHE_DIR"] = f"{perf_wd}/ccache/clang-tidy-cache"
+        os.environ["CTCACHE_S3_BUCKET"] = "dummy-bucket"
+        os.environ["CTCACHE_S3_FOLDER"] = "dummy-folder"
 
     args = parse_args()
     test_options = [to.strip() for to in args.test_options.split(",")]

@@ -84,6 +84,15 @@ def run_shell(name, command, **kwargs):
 
 
 def main():
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[build_clickhouse.py] Skipping S3/AWS logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+        os.environ["SCCACHE_IDLE_TIMEOUT"] = "7200"
+        os.environ["SCCACHE_BUCKET"] = "dummy-bucket"
+        os.environ["SCCACHE_S3_KEY_PREFIX"] = "dummy-prefix"
+        os.environ["CTCACHE_DIR"] = f"{build_dir}/ccache/clang-tidy-cache"
+        os.environ["CTCACHE_S3_BUCKET"] = "dummy-bucket"
+        os.environ["CTCACHE_S3_FOLDER"] = "dummy-folder"
+
     args = parse_args()
 
     stop_watch = Utils.Stopwatch()

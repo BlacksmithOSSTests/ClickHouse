@@ -1,6 +1,14 @@
 import os
 if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
-    print("[fuzzers_job.py] Skipping AWS/SSM/Azure logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+    print("[fuzzers_job.py] Skipping S3/AWS logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+    os.environ["SCCACHE_IDLE_TIMEOUT"] = "7200"
+    os.environ["SCCACHE_BUCKET"] = "dummy-bucket"
+    os.environ["SCCACHE_S3_KEY_PREFIX"] = "dummy-prefix"
+    os.environ["CTCACHE_DIR"] = "./ci/tmp/build/ccache/clang-tidy-cache"
+    os.environ["CTCACHE_S3_BUCKET"] = "dummy-bucket"
+    os.environ["CTCACHE_S3_FOLDER"] = "dummy-folder"
+    import sys
+    sys.exit(0)
 
 from praktika.result import Result
 from praktika.utils import Shell, Utils

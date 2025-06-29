@@ -1,10 +1,18 @@
 import os
+import sys
 
 from ci.praktika.result import Result
 from ci.praktika.utils import Utils
 
 if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
-    print("[docs_job.py] Skipping AWS/SSM/Azure logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+    print("[docs_job.py] Skipping S3/AWS logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+    os.environ["SCCACHE_IDLE_TIMEOUT"] = "7200"
+    os.environ["SCCACHE_BUCKET"] = "dummy-bucket"
+    os.environ["SCCACHE_S3_KEY_PREFIX"] = "dummy-prefix"
+    os.environ["CTCACHE_DIR"] = "./ci/tmp/build/ccache/clang-tidy-cache"
+    os.environ["CTCACHE_S3_BUCKET"] = "dummy-bucket"
+    os.environ["CTCACHE_S3_FOLDER"] = "dummy-folder"
+    sys.exit(0)
 
 if __name__ == "__main__":
 

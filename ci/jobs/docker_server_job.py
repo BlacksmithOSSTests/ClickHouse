@@ -1,5 +1,6 @@
 import argparse
 from typing import List
+import os
 
 from praktika import Secret
 from praktika.result import Result
@@ -35,6 +36,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def docker_login(relogin: bool = True) -> None:
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[docker_server_job.py] Skipping Docker login: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+        print("Docker login requires AWS SSM secrets, which are not available on Blacksmith runners.")
+        return
+    
     if relogin or not Shell.check(
         "docker system info | grep --quiet -E 'Username|Registry'"
     ):

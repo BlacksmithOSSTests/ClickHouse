@@ -1,9 +1,13 @@
 import traceback
+import os
 
 from ci.defs.defs import S3_BUCKET_NAME, BuildTypes
 from ci.praktika.info import Info
 from ci.praktika.s3 import S3
 from ci.praktika.utils import Shell
+
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[build_master_head_hook.py] Skipping S3 upload logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
 
 BUILD_TYPE_TO_STATIC_LOCATION = {
     BuildTypes.AMD_RELEASE: "amd64",
@@ -22,6 +26,9 @@ BUILD_TYPE_TO_STATIC_LOCATION = {
 
 
 def check():
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[build_master_head_hook.py] Skipping S3 upload logic in check(): AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+        return True
     info = Info()
     Shell.check("find ./ci/tmp/build/programs -type f", verbose=True)
     if not info.pr_number and info.repo_name == "ClickHouse/ClickHouse":

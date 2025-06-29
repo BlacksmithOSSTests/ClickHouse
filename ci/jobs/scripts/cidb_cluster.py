@@ -1,12 +1,15 @@
 import json
 import time
 import traceback
+import os
 
 import requests
 
 from ci.praktika.info import Info
 from ci.praktika.settings import Settings
 
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[cidb_cluster.py] Skipping database operations: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
 
 class CIDBCluster:
     URL_SECRET = Settings.SECRET_CI_DB_URL
@@ -30,6 +33,10 @@ class CIDBCluster:
             self._session = None
 
     def is_ready(self):
+        if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+            print("CIDBCluster: Skipping database connection - AWS_EC2_METADATA_DISABLED is set")
+            return False
+            
         if not self.url:
             self.url = self.url_secret.get_value()
             self.user = self.user_secret.get_value()

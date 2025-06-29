@@ -110,12 +110,22 @@ def main():
     if not info.is_local_run:
         # Default timeout (10min), can be too low, we run this in docker
         # anyway, will be terminated once the build is finished
-        os.environ["SCCACHE_IDLE_TIMEOUT"] = "7200"
-        os.environ["SCCACHE_BUCKET"] = Settings.S3_ARTIFACT_PATH
-        os.environ["SCCACHE_S3_KEY_PREFIX"] = "ccache/sccache"
-        os.environ["CTCACHE_DIR"] = f"{build_dir}/ccache/clang-tidy-cache"
-        os.environ["CTCACHE_S3_BUCKET"] = Settings.S3_ARTIFACT_PATH
-        os.environ["CTCACHE_S3_FOLDER"] = "ccache/clang-tidy-cache"
+        if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+            print("[build_clickhouse.py] Skipping S3 cache setup: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+            # Set dummy values for sccache to avoid S3 calls
+            os.environ["SCCACHE_IDLE_TIMEOUT"] = "7200"
+            os.environ["SCCACHE_BUCKET"] = "dummy-bucket"
+            os.environ["SCCACHE_S3_KEY_PREFIX"] = "dummy-prefix"
+            os.environ["CTCACHE_DIR"] = f"{build_dir}/ccache/clang-tidy-cache"
+            os.environ["CTCACHE_S3_BUCKET"] = "dummy-bucket"
+            os.environ["CTCACHE_S3_FOLDER"] = "dummy-folder"
+        else:
+            os.environ["SCCACHE_IDLE_TIMEOUT"] = "7200"
+            os.environ["SCCACHE_BUCKET"] = Settings.S3_ARTIFACT_PATH
+            os.environ["SCCACHE_S3_KEY_PREFIX"] = "ccache/sccache"
+            os.environ["CTCACHE_DIR"] = f"{build_dir}/ccache/clang-tidy-cache"
+            os.environ["CTCACHE_S3_BUCKET"] = Settings.S3_ARTIFACT_PATH
+            os.environ["CTCACHE_S3_FOLDER"] = "ccache/clang-tidy-cache"
     if info.pr_number == 0:
         cmake_cmd += " -DCLICKHOUSE_OFFICIAL_BUILD=1"
     cmake_cmd += f" {current_directory}"

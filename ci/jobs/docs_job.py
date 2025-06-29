@@ -3,6 +3,9 @@ import os
 from ci.praktika.result import Result
 from ci.praktika.utils import Utils
 
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[docs_job.py] Skipping AWS/SSM/Azure logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+
 if __name__ == "__main__":
 
     results = []

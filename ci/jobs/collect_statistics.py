@@ -1,6 +1,7 @@
 import json
 import sys
 from datetime import datetime
+import os
 
 from ci.praktika import Secret
 from ci.praktika.cidb import CIDB
@@ -13,6 +14,10 @@ from ci.settings.settings import S3_REPORT_BUCKET_NAME
 
 # TODO: Should work for generic CI and become native praktika job
 
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[collect_statistics.py] Skipping statistics collection: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+    print("Statistics collection requires AWS SSM secrets and remote database access, which are not available on Blacksmith runners.")
+    sys.exit(0)
 
 QUANTILES = [
     0,

@@ -8,6 +8,9 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[performance_tests.py] Skipping AWS/SSM/Azure logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+
 from ci.jobs.scripts.cidb_cluster import CIDBCluster
 from ci.praktika.info import Info
 from ci.praktika.result import Result

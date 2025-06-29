@@ -15,6 +15,9 @@ current_directory = Utils.cwd()
 build_dir = f"{current_directory}/ci/tmp/build"
 temp_dir = f"{current_directory}/ci/tmp/"
 
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[fast_test.py] Skipping AWS/SSM/Azure logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+    # Add any additional skip logic if needed
 
 def clone_submodules():
     submodules_to_update = [

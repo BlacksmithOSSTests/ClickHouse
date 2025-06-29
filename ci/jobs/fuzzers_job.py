@@ -1,3 +1,7 @@
+import os
+if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+    print("[fuzzers_job.py] Skipping AWS/SSM/Azure logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+
 from praktika.result import Result
 from praktika.utils import Shell, Utils
 

@@ -128,6 +128,12 @@ OPTIONS_TO_TEST_RUNNER_ARGUMENTS = {
 
 
 def main():
+    if os.environ.get("AWS_EC2_METADATA_DISABLED") == "true":
+        print("[functional_tests.py] Skipping AWS/SSM/Azure logic: AWS_EC2_METADATA_DISABLED is set. Running in Blacksmith mode.")
+        # Optionally, you can set dummy values or skip only the AWS/Azure-dependent parts
+        # For now, just skip setting AZURE_CONNECTION_STRING and any AWS/SSM logic
+        os.environ["AZURE_CONNECTION_STRING"] = ""
+
     args = parse_args()
     test_options = [to.strip() for to in args.options.split(",")]
     no_parallel = "non-parallel" in test_options
@@ -169,14 +175,14 @@ def main():
         if "SharedCatalog" in to:
             is_shared_catalog = True
 
-    if not info.is_local_run:
+    if not info.is_local_run and os.environ.get("AWS_EC2_METADATA_DISABLED") != "true":
         # TODO: find a way to work with Azure secret so it's ok for local tests as well, for now keep azure disabled
         os.environ["AZURE_CONNECTION_STRING"] = Shell.get_output(
             f"aws ssm get-parameter --region us-east-1 --name azure_connection_string --with-decryption --output text --query Parameter.Value",
             verbose=True,
         )
     else:
-        print("Disable azure for a local run")
+        print("Disable azure for a local run or Blacksmith runner")
         config_installs_args += " --no-azure"
 
     ch_path = args.ch_path
